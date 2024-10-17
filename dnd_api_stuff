@@ -1,0 +1,52 @@
+import requests
+import random
+
+API_BASE_URL = "https://www.dnd5eapi.co"
+
+def get_monsters():
+    response = requests.get(f"{API_BASE_URL}/api/monsters")
+    if response.status_code == 200:
+        return response.json()["results"]
+    else:
+        print("Failed to retrieve monsters.")
+        return []
+
+def get_monster_details(monster_url):
+    response = requests.get(f"{API_BASE_URL}{monster_url}")
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Failed to retrieve details for {monster_url}")
+        return None
+
+def generate_encounter(party_level, encounter_size=3):
+    monsters = get_monsters()
+    
+    selected_monsters = random.sample(monsters, encounter_size)
+    
+    encounter = []
+    
+    print("Random Combat Encounter:")
+    for monster in selected_monsters:
+        monster_details = get_monster_details(monster["url"])
+        if monster_details:
+            ac_value = monster_details["armor_class"][0]["value"]
+            
+            monster_name = monster_details["name"]
+            monster_cr = monster_details.get("challenge_rating", "Unknown")
+            monster_hp = monster_details.get("hit_points", "Unknown")
+            
+            encounter.append({
+                "name": monster_name,
+                "challenge_rating": monster_cr,
+                "hit_points": monster_hp,
+                "armor_class": ac_value,
+            })
+            print(f"- {monster_name} (CR: {monster_cr}, HP: {monster_hp}, AC: {ac_value})")
+    
+    return encounter
+
+if __name__ == "__main__":
+    party_level = int(input("Enter the average party level: "))
+    encounter_size = int(input("Enter the number of monsters in the encounter: "))
+    generate_encounter(party_level, encounter_size)
